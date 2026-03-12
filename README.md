@@ -125,7 +125,7 @@ public void Insert(int particleId, Vector3 position)
 }
 ```
 
-There is [great scientific atricle](https://dl.acm.org/doi/epdf/10.1145/1658866.1658870) about boids and small description of such spatial hash approach
+There is a [great scientific article](https://dl.acm.org/doi/epdf/10.1145/1658866.1658870) (where I also got these beautiful images from) about boids and small description of such spatial hash approach
 
 ### ECS
 Finally, the Entity Component System (ECS) is an architectural pattern used to manage and process game data. Unlike OOP, where a programmer creates methods to process data inside the same class where the data is stored, ECS uses Components that act as pure data containers (similar to DTOs).
