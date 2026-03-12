@@ -100,7 +100,7 @@ if (alignmentCount > 0){
 ```
 
 #### Spatial Hashing
-How do we effectively find all neighbors? The first thing that comes to mind is using a Hash Map to store boid IDs. We could hash the particle position and store its ID in a bucket.
+How do we effectively find all neighbors? The first thing that comes to (my, not clever to be honest) mind is using a Hash Map to store boid IDs. We could hash the particle position and store its ID in a bucket.
 
 However, there are two problems: we have to traverse all boids to compare distances, and standard Hash Maps can cause many cache misses. Instead, we can divide our 3D space into cubes (cells) with an edge length equal to the largest force radius. With this approach, we only need to traverse the cubes closest to our particle.
 
@@ -145,7 +145,7 @@ You also can read this pretty [good article about ECS](https://arielcoppes.dev/2
 
 The first approach uses the LeoEcsLite framework created by Leopotam, with a slightly modified [EcsLite Threads](https://github.com/Leopotam/ecslite-threads) extension. I really enjoy this framework; it is lightweight, engine-agnostic, and uses structs for Components, which provides better cache locality.
 
-2. **[Unity DOTS](https://github.com/Lukaria/CUDA_Leo_DOTS_Flocking/tree/main/DOTS))**
+2. **[Unity DOTS](https://github.com/Lukaria/CUDA_Leo_DOTS_Flocking/tree/main/DOTS)**
 
 The second approach uses the Unity DOTS stack (Jobs, Burst Compiler, Entities, and Entities Graphics), which allows for highly optimized multi-threaded code. It offers many useful tools aimed at simplifying ECS-style development and achieving high performance.
 
