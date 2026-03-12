@@ -2,6 +2,10 @@
 
 A [murmuration](https://uncertainty.club/murmuration/) (flocking) simulation of particles implemented using three different approaches: **LeoEcsLite with Threads**, **Unity DOTS stack**, and **Compute Shaders**.
 
+<p align="center">
+    <img src="https://github.com/Lukaria/CUDA_Leo_DOTS_Flocking/blob/main/media/murmuration.gif" width="25%" />
+</p>
+
 ## Table of Contents
 - [Project Overview](#project-overview)
 - [Theory & Algorithms](#theory--algorithms)
@@ -23,8 +27,19 @@ The **Boids** algorithm was chosen for this simulation. It is a well-known algor
 
 For each particle, the algorithm calculates a steering vector based on the particle's neighbors within a predefined radius. The three vectors are:
 - **Cohesion:** Steer to move towards the average position (center of mass) of neighbors.
-- **Separation:** Steer to avoid crowding local flockmates.
-- **Alignment:** Steer towards the average heading of local flockmates.
+<p align="center">
+    <img src="https://github.com/Lukaria/CUDA_Leo_DOTS_Flocking/blob/main/media/cohesion.png" width="25%" />
+</p>
+
+- **Separation:** Steer to avoid crowding local neighbors.
+<p align="center">
+    <img src="https://github.com/Lukaria/CUDA_Leo_DOTS_Flocking/blob/main/media/separation.png" width="25%" />
+</p>
+
+- **Alignment:** Steer towards the average heading of local neighbors.
+<p align="center">
+    <img src="https://github.com/Lukaria/CUDA_Leo_DOTS_Flocking/blob/main/media/alignment.png" width="25%" />
+</p>
 
 The calculations can be represented by the pseudocode below. We additionally use weights to enhance or diminish the final vector.
 
@@ -119,18 +134,22 @@ A bunch of different components are stored in an Entity. Entities are stored in 
 
 For example, to move all enemies, you can filter entities that have a SteeringComponent, HealthComponent, and EnemyComponent.
 
+<p align="center">
+    <img src="https://github.com/Lukaria/CUDA_Leo_DOTS_Flocking/blob/main/media/ecs.png" width="40%" />
+</p>
+
 You also can read this pretty [good article about ECS](https://arielcoppes.dev/2023/07/13/design-decisions-when-building-games-using-ecs.html) and [this FAQ](https://github.com/SanderMertens/ecs-faq?tab=readme-ov-file#entity-component-system-faq) for better understanding.
 
 ## Approaches
-1. **[LeoEcsLite](https://github.com/Leopotam/ecslite)**
+1. **[LeoEcsLite](https://github.com/Lukaria/CUDA_Leo_DOTS_Flocking/tree/main/LeoEcsLite)**
 
 The first approach uses the LeoEcsLite framework created by Leopotam, with a slightly modified [EcsLite Threads](https://github.com/Leopotam/ecslite-threads) extension. I really enjoy this framework; it is lightweight, engine-agnostic, and uses structs for Components, which provides better cache locality.
 
-2. **[Unity DOTS](https://unity.com/dots)**
+2. **[Unity DOTS](https://github.com/Lukaria/CUDA_Leo_DOTS_Flocking/tree/main/DOTS))**
 
 The second approach uses the Unity DOTS stack (Jobs, Burst Compiler, Entities, and Entities Graphics), which allows for highly optimized multi-threaded code. It offers many useful tools aimed at simplifying ECS-style development and achieving high performance.
 
-3. **[Compute Shaders](https://docs.unity3d.com/6000.3/Documentation/Manual/class-ComputeShader-introduction.html)**
+3. **[Compute Shaders](https://github.com/Lukaria/CUDA_Leo_DOTS_Flocking/tree/main/ComputeShaders)**
 
 The third approach uses Compute Shaders running entirely on the GPU. By using a ComputeBuffer to store data on the GPU, we can perform massive parallel computations with zero CPU-to-GPU transfer overhead. Rendering is handled via a single DrawProcedural call.
 
