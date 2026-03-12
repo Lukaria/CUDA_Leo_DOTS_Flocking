@@ -1,0 +1,287 @@
+#pragma kernel ClearBuckets
+#pragma kernel BuildSpatialHash
+#pragma kernel SimulateBoids
+
+
+//-- data --
+struct Boid {
+    float3 position;
+    float memory_alignment_spacer_1;
+    float4 rotation;
+    float3 velocity;
+    float memory_alignment_spacer_2;
+};
+
+RWStructuredBuffer<Boid> particles;
+RWStructuredBuffer<int> bucket;
+RWStructuredBuffer<int> next;
+//general
+int particles_count;
+float delta_time;
+float cell_reciprocal;
+//steering
+float cohesion_radius_sq;
+float separation_radius_sq;
+float alignment_radius_sq;
+float cohesion_weight;
+float separation_weight;
+float alignment_weight;
+//limits
+float min_speed;
+float max_speed;
+float rotation_speed;
+float x_bound_size;
+float y_bound_size;
+float z_bound_size;
+int bucket_size;
+
+// -- constants --
+const int DefaultBucketValue = -1;
+//const int BoidsInCellLimit = pow(2, 10);
+
+uint hash(float x, float y, float z)
+{
+    int cx = (int)floor(x);
+    int cy = (int)floor(y);
+    int cz = (int)floor(z);
+    int h =     ((uint)cx * 73856093) ^
+               ((uint)cy * 19349663) ^
+               ((uint)cz * 83492791);
+
+    return h & (bucket_size - 1);
+}
+
+uint hash(float3 value)
+{
+    return hash(value.x, value.y, value.z);
+}
+
+//-- kernel 1: clear --
+[numthreads(1024, 1, 1)]
+void ClearBuckets(uint3 id : SV_DispatchThreadID)
+{
+    if ((int)id.x >= bucket_size) return;
+    bucket[id.x] = DefaultBucketValue;
+}
+
+//-- kernel 2: build spatial hash --
+[numthreads(256, 1, 1)]
+void BuildSpatialHash(uint3 id : SV_DispatchThreadID)
+{
+    int entity = (int)id.x;
+    if (entity >= particles_count) return;
+    
+    int key = hash(particles[entity].position * cell_reciprocal);
+    int prev_index;
+    next[entity] = bucket[key];
+    InterlockedExchange(bucket[key], entity, prev_index);
+    
+}
+
+//-- kernel 3: simulate boids --
+float3 get_acceleration(uint index, float3 position)
+{
+    float3 cohesion = float3(0, 0, 0);
+    float3 separation = float3(0, 0, 0);
+    float3 alignment = float3(0, 0, 0);
+
+    int cohesion_count = 0;
+    int separation_count = 0;
+    int alignment_count = 0;
+    
+    float3 cell_coord = position * cell_reciprocal;
+    int cx = (int)floor(cell_coord.x);
+    int cy = (int)floor(cell_coord.y);
+    int cz = (int)floor(cell_coord.z);
+    for (int dx = -1; dx <= 1; dx++)
+        for (int dy = -1; dy <= 1; dy++)
+            for (int dz = -1; dz <= 1; dz++)
+            {
+                int key = hash(cx+dx, cy+dy, cz+dz);
+                int neighbor = bucket[key];
+                //int safety = 0;
+                while (neighbor != DefaultBucketValue /*&& safety < BoidsInCellLimit*/)
+                {
+                    //++safety;
+                    if (neighbor == (int)index)
+                    {
+                        neighbor = next[neighbor];
+                        continue;
+                    }
+                    float3 delta_position = particles[neighbor].position - position;
+                    float distance_sq = dot(delta_position, delta_position);
+                    if (distance_sq <= cohesion_radius_sq)
+                    {
+                        cohesion += particles[neighbor].position;
+                        ++cohesion_count;
+                    }
+
+                    if (distance_sq <= separation_radius_sq && distance_sq > 0.0001f)
+                    {
+                        float3 dist = -delta_position;
+                        separation += dist / dot(dist, dist);
+                        ++separation_count;
+                    }
+
+                    if (distance_sq <= alignment_radius_sq)
+                    {
+                        alignment += particles[neighbor].velocity;
+                        ++alignment_count;
+                    }
+                        
+                    neighbor = next[neighbor];
+                }        
+            }
+    
+    if (cohesion_count > 0)
+    {
+        cohesion /= cohesion_count;
+        cohesion = (cohesion - position) * cohesion_weight;
+    }
+
+    if (separation_count > 0)
+    {
+        separation /= separation_count;
+        separation *= separation_weight;
+    }
+
+    if (alignment_count > 0)
+    {
+        alignment /= alignment_count;
+        alignment *= alignment_weight;
+    }
+    return cohesion + separation + alignment;
+}
+
+void normalize_velocity(inout float3 velocity)
+{
+    float speed_sq = dot(velocity, velocity); 
+    
+    /*if (speed_sq < 0.00001f)
+    {
+        velocity = float3(1, 0, 0) * min_speed;
+    }*/
+    if (speed_sq < min_speed * min_speed) 
+    {
+        velocity = normalize(velocity) * min_speed;
+    }
+    else if (speed_sq > max_speed * max_speed) 
+    {
+        velocity = normalize(velocity) * max_speed;
+    }
+}
+
+float bound_coordinate(float coord, const float bound)
+{
+    if (coord > bound)
+    {
+        coord = fmod(coord, bound) - bound;
+    }
+    else if (coord < -bound)
+    {
+        coord = fmod(coord, bound) + bound;
+    }
+    
+    return coord;
+}
+
+void update_position(inout float3 position, const float3 velocity)
+{
+    position += velocity * delta_time;
+                
+    position.x = bound_coordinate(position.x, x_bound_size);
+    position.y = bound_coordinate(position.y, y_bound_size);
+    position.z = bound_coordinate(position.z, z_bound_size);
+}
+
+float4 quaternion_look_rotation(float3 forward, float3 up)
+{
+    float3 vector1 = normalize(forward);
+    float3 vector2 = normalize(cross(up, vector1));
+    float3 vector3 = cross(vector1, vector2);
+    float m00 = vector2.x;
+    float m01 = vector2.y;
+    float m02 = vector2.z;
+    float m10 = vector3.x;
+    float m11 = vector3.y;
+    float m12 = vector3.z;
+    float m20 = vector1.x;
+    float m21 = vector1.y;
+    float m22 = vector1.z;
+
+
+    float num8 = (m00 + m11) + m22;
+    float4 quaternion = float4(0,0,0,0);
+    if (num8 > 0.f)
+    {
+        float num = sqrt(num8 + 1.f);
+        quaternion.w = num * 0.5f;
+        num = 0.5f / num;
+        quaternion.x = (m12 - m21) * num;
+        quaternion.y = (m20 - m02) * num;
+        quaternion.z = (m01 - m10) * num;
+        return quaternion;
+    }
+    if ((m00 >= m11) && (m00 >= m22))
+    {
+        float num7 = sqrt(((1.f + m00) - m11) - m22);
+        float num4 = 0.5f / num7;
+        quaternion.x = 0.5f * num7;
+        quaternion.y = (m01 + m10) * num4;
+        quaternion.z = (m02 + m20) * num4;
+        quaternion.w = (m12 - m21) * num4;
+        return quaternion;
+    }
+    if (m11 > m22)
+    {
+        float num6 = sqrt(((1.f + m11) - m00) - m22);
+        float num3 = 0.5f / num6;
+        quaternion.x = (m10+ m01) * num3;
+        quaternion.y = 0.5f * num6;
+        quaternion.z = (m21 + m12) * num3;
+        quaternion.w = (m20 - m02) * num3;
+        return quaternion; 
+    }
+    float num5 = sqrt(((1.f + m22) - m00) - m11);
+    float num2 = 0.5f / num5;
+    quaternion.x = (m20 + m02) * num2;
+    quaternion.y = (m21 + m12) * num2;
+    quaternion.z = 0.5f * num5;
+    quaternion.w = (m01 - m10) * num2;
+    return quaternion;
+}
+
+void update_rotation(inout float4 rotation, const float3 velocity)
+{
+    if (dot(velocity, velocity) > 0.001f)
+    {
+        rotation = lerp(
+            rotation, 
+            quaternion_look_rotation(normalize(velocity), float3(0, 1, 0)),
+            rotation_speed * delta_time);
+    }
+}
+
+
+[numthreads(256, 1, 1)]
+void SimulateBoids(uint3 id : SV_DispatchThreadID) {
+    uint index = id.x;
+    if (index >= particles_count) return;
+
+    Boid particle = particles[index];
+    
+    float3 position = particle.position;
+    float4 rotation = particle.rotation;
+    float3 velocity = particle.velocity;
+    float3 accel = get_acceleration(index, position);
+    velocity = velocity + accel;
+    normalize_velocity(velocity);
+    update_position(position, velocity);
+    update_rotation(rotation, velocity);
+    
+    particle.position = position;
+    particle.rotation = rotation;
+    particle.velocity = velocity;
+    particles[index] = particle;
+}
+
