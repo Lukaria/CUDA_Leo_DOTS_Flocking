@@ -2,8 +2,11 @@
 
 A [murmuration](https://uncertainty.club/murmuration/) (flocking) simulation of particles implemented using three different approaches: **LeoEcsLite with Threads**, **Unity DOTS stack**, and **Compute Shaders**.
 
+Below are GIFs showing real-life murmuration alongside the final result from one of the implemented approaches.
+
 <p align="center">
-    <img src="https://github.com/Lukaria/CUDA_Leo_DOTS_Flocking/blob/main/media/murmuration.gif" width="25%" />
+    <img src="https://github.com/Lukaria/CUDA_Leo_DOTS_Flocking/blob/main/media/murmuration.gif" width="40%" />
+    <img src="https://github.com/Lukaria/CUDA_Leo_DOTS_Flocking/blob/main/media/boids.gif" width="43%" />
 </p>
 
 ## Table of Contents
