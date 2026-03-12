@@ -1,4 +1,4 @@
-# **LeoEcsLite Approach**
+# **[LeoEcsLite](https://github.com/Leopotam/ecslite)**
 
 This ECS approach utilizes the LeoEcsLite framework by Leopotam, along with a slightly modified [EcsLite Threads](https://github.com/Leopotam/ecslite-threads)  extension.
 
