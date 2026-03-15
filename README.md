@@ -5,8 +5,8 @@ A [murmuration](https://uncertainty.club/murmuration/) (flocking) simulation of 
 Below are GIFs showing real-life murmuration alongside the final result from one of the implemented approaches.
 
 <p align="center">
-    <img src="https://github.com/Lukaria/CUDA_Leo_DOTS_Flocking/blob/main/media/murmuration.gif" width="40%" />
-    <img src="https://github.com/Lukaria/CUDA_Leo_DOTS_Flocking/blob/main/media/simulation.gif" width="43%" />
+    <img src="https://github.com/Lukaria/CUDA_Leo_DOTS_Flocking/blob/main/media/murmuration.gif" width="50%" />
+    <img src="https://github.com/Lukaria/CUDA_Leo_DOTS_Flocking/blob/main/media/simulation.gif" width="70%" />
 </p>
 
 ## Table of Contents
