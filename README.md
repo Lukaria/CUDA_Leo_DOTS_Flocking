@@ -161,7 +161,7 @@ The third approach uses Compute Shaders running entirely on the GPU. By using a 
 ## Benchmarks
 Regarding the benchmarks, I should first point out that performance testing wasn't the main goal of this project, so the results might be somewhat rough and not perfectly accurate. Additionally, I ran them directly in the Unity Editor, meaning engine overhead definitely affected the results. However, there are still some interesting takeaways.
 
-My setup is: RTX 5070 Ti + Intel Core i5-14400f (2500 Mhz, 10 Cores,16 Logical Processors) + RAM 2x16 DDR (3600 Mhz) (haven't you seen DDR5 prices?💀)
+My setup is: RTX 5070 Ti + Intel Core i5-14400f (2500 Mhz, 10 Cores,16 Logical Processors) + RAM 2x16 DDR4 (3600 Mhz) (haven't you seen DDR5 prices?💀)
 
 All benchmarks were captured using the exact same parameters over a fixed time period. The parameters are listed below:
 
